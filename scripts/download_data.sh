@@ -22,26 +22,27 @@ echo "[download_data.sh] Cornell dataset not found at ${DATA_DIR} — attempting
 
 # Verify kaggle CLI is available and authenticated
 if ! command -v kaggle >/dev/null 2>&1; then
-    cat >&2 <<'EOF'
-[download_data.sh] ERROR: 'kaggle' CLI not found.
-
-Install with:
-    pip install kaggle
-
-Then place your Kaggle API token at ~/.kaggle/kaggle.json:
-    1. Visit https://www.kaggle.com/settings/account, click "Create New API Token"
-    2. Move the downloaded kaggle.json to ~/.kaggle/kaggle.json
-    3. chmod 600 ~/.kaggle/kaggle.json
-
-In Colab, upload kaggle.json with:
-    from google.colab import files; files.upload()
-    !mkdir -p ~/.kaggle && mv kaggle.json ~/.kaggle/ && chmod 600 ~/.kaggle/kaggle.json
-EOF
+    echo "[download_data.sh] ERROR: 'kaggle' CLI not found. Install with: pip install kaggle" >&2
     exit 1
 fi
 
-if [[ ! -f "${HOME}/.kaggle/kaggle.json" ]]; then
-    echo "[download_data.sh] ERROR: ~/.kaggle/kaggle.json not found. See instructions above." >&2
+# Kaggle now offers two token formats. Accept either:
+#   1. KAGGLE_API_TOKEN env var (new format, KGAT_... string)
+#   2. ~/.kaggle/access_token file containing the new-format token
+#   3. ~/.kaggle/kaggle.json (legacy username+key format)
+if [[ -z "${KAGGLE_API_TOKEN:-}" \
+      && ! -f "${HOME}/.kaggle/access_token" \
+      && ! -f "${HOME}/.kaggle/kaggle.json" ]]; then
+    cat >&2 <<'EOF'
+[download_data.sh] ERROR: no Kaggle credentials found.
+
+Provide one of the following:
+  - export KAGGLE_API_TOKEN="KGAT_..."        (new format, recommended)
+  - ~/.kaggle/access_token  with the KGAT_... token as its only content
+  - ~/.kaggle/kaggle.json   (legacy username+key file)
+
+Get a token at https://www.kaggle.com/settings/account → "Create New API Token".
+EOF
     exit 1
 fi
 
